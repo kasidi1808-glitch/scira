@@ -2,6 +2,7 @@
 import { createEnv } from '@t3-oss/env-nextjs';
 import { z } from 'zod';
 
+const shouldSkipEnvValidation = process.env.SKIP_ENV_VALIDATION === '1' || process.env.VERCEL === '1';
 
 export const serverEnv = createEnv({
   server: {
@@ -61,4 +62,6 @@ export const serverEnv = createEnv({
     UPSTASH_BOX_API_KEY: z.string().optional(),
   },
   experimental__runtimeEnv: process.env,
+  emptyStringAsUndefined: true,
+  skipValidation: shouldSkipEnvValidation,
 });
