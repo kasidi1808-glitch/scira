@@ -64,8 +64,12 @@ export const polarClient = new Polar({
   ...(process.env.NODE_ENV === 'production' ? {} : { server: 'sandbox' }),
 });
 
+const dodoPaymentsBearerToken =
+  process.env.DODO_PAYMENTS_API_KEY ||
+  (process.env.SKIP_ENV_VALIDATION === '1' || process.env.VERCEL === '1' ? 'missing_dodo_api_key' : '');
+
 export const dodoPayments = new DodoPayments({
-  bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
+  bearerToken: dodoPaymentsBearerToken,
   ...(process.env.NODE_ENV === 'production' ? { environment: 'live_mode' } : { environment: 'test_mode' }),
 });
 

@@ -149,7 +149,12 @@ function buildSupadataTitle(metadata: SupadataMetadata, transcript: string | nul
 }
 
 // Format Supadata response to match our schema
-function formatSupadataResponse(metadata: SupadataMetadata, url: string, transcript: string | null, responseTime: number) {
+function formatSupadataResponse(
+  metadata: SupadataMetadata,
+  url: string,
+  transcript: string | null,
+  responseTime: number,
+) {
   const title = buildSupadataTitle(metadata, transcript);
 
   const content = [
@@ -179,8 +184,7 @@ function formatSupadataResponse(metadata: SupadataMetadata, url: string, transcr
         content,
         title,
         description:
-          metadata.description ||
-          `${metadata.type} from ${metadata.author.displayName} on ${metadata.platform}`,
+          metadata.description || `${metadata.type} from ${metadata.author.displayName} on ${metadata.platform}`,
         author: metadata.author.displayName,
         publishedDate: metadata.createdAt,
         image: metadata.media.thumbnailUrl || metadata.author.avatarUrl,
@@ -202,18 +206,48 @@ function formatSupadataResponse(metadata: SupadataMetadata, url: string, transcr
   };
 }
 
+function getSupadataClient() {
+  const apiKey = serverEnv.SUPADATA_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
 
-const supadata = new Supadata({ apiKey: serverEnv.SUPADATA_API_KEY });
-const exa = new Exa(serverEnv.EXA_API_KEY as string);
-const parallel = new Parallel({ apiKey: serverEnv.PARALLEL_API_KEY });
-const firecrawl = new FirecrawlApp({ apiKey: serverEnv.FIRECRAWL_API_KEY });
+  return new Supadata({ apiKey });
+}
+
+function getExaClient() {
+  const apiKey = serverEnv.EXA_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  return new Exa(apiKey);
+}
+
+function getParallelClient() {
+  const apiKey = serverEnv.PARALLEL_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  return new Parallel({ apiKey });
+}
+
+function getFirecrawlClient() {
+  const apiKey = serverEnv.FIRECRAWL_API_KEY;
+  if (!apiKey || apiKey === 'missing_firecrawl_api_key') {
+    return null;
+  }
+
+  return new FirecrawlApp({ apiKey });
+}
 
 // Helper function to retrieve content from a single URL
 async function retrieveSingleUrl(
   url: string,
   content_type?: 'general' | 'twitter' | 'youtube' | 'tiktok' | 'instagram',
   include_summary: boolean = true,
-  live_crawl: 'never' | 'auto' | 'preferred' = 'preferred'
+  live_crawl: 'never' | 'auto' | 'preferred' = 'preferred',
 ): Promise<{
   url: string;
   result: any;
@@ -231,6 +265,11 @@ async function retrieveSingleUrl(
     if (detectedType !== 'general') {
       console.log(`Detected ${detectedType} content, using Supadata API for ${url}`);
       try {
+        const supadata = getSupadataClient();
+        if (!supadata) {
+          throw new Error('SUPADATA_API_KEY is not configured');
+        }
+
         // Fetch metadata
         const metadata = await supadata.metadata({ url });
         console.log(`Successfully retrieved ${detectedType} metadata`);
@@ -241,8 +280,15 @@ async function retrieveSingleUrl(
           console.log(`Fetching transcript for ${detectedType} content...`);
           const transcriptResult = await supadata.transcript({ url, mode: 'auto' });
 
-          console.log('Transcript result type:', typeof transcriptResult, Array.isArray(transcriptResult) ? 'array' : 'object');
-          console.log('Transcript result keys:', transcriptResult && typeof transcriptResult === 'object' ? Object.keys(transcriptResult) : 'N/A');
+          console.log(
+            'Transcript result type:',
+            typeof transcriptResult,
+            Array.isArray(transcriptResult) ? 'array' : 'object',
+          );
+          console.log(
+            'Transcript result keys:',
+            transcriptResult && typeof transcriptResult === 'object' ? Object.keys(transcriptResult) : 'N/A',
+          );
 
           // Handle if result is directly an array of segments
           if (Array.isArray(transcriptResult)) {
@@ -271,7 +317,7 @@ async function retrieveSingleUrl(
             let attempts = 0;
 
             while (attempts < maxAttempts) {
-              const jobResult = await supadata.transcript.getJobStatus(jobResponse.jobId) as TranscriptJobResult;
+              const jobResult = (await supadata.transcript.getJobStatus(jobResponse.jobId)) as TranscriptJobResult;
 
               if (jobResult.status === 'completed') {
                 console.log('Transcript job completed');
@@ -292,8 +338,10 @@ async function retrieveSingleUrl(
               } else {
                 // Exponential backoff: 500ms, 1s, 2s, 4s, 8s, 8s, 8s...
                 const delay = Math.min(baseDelayMs * Math.pow(2, attempts), maxDelayMs);
-                console.log(`Job status: ${jobResult.status}, waiting ${delay}ms (attempt ${attempts + 1}/${maxAttempts})...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
+                console.log(
+                  `Job status: ${jobResult.status}, waiting ${delay}ms (attempt ${attempts + 1}/${maxAttempts})...`,
+                );
+                await new Promise((resolve) => setTimeout(resolve, delay));
                 attempts++;
               }
             }
@@ -303,7 +351,10 @@ async function retrieveSingleUrl(
             }
           } else {
             // Direct result for smaller files or native transcripts
-            const directResult = transcriptResult as TranscriptDirectResult | TranscriptSegment[] | Record<string, unknown>;
+            const directResult = transcriptResult as
+              | TranscriptDirectResult
+              | TranscriptSegment[]
+              | Record<string, unknown>;
 
             if (directResult && typeof directResult === 'object' && 'segments' in directResult) {
               const segments = (directResult as { segments: unknown }).segments;
@@ -403,31 +454,42 @@ async function retrieveSingleUrl(
     let usingFirecrawl = false;
     let source = 'exa';
 
-    try {
-      result = await exa.getContents([url], {
-        text: true,
-        summary: include_summary ? true : undefined,
-        livecrawl: live_crawl,
-      });
+    const exa = getExaClient();
+    if (!exa) {
+      console.log('EXA_API_KEY is not configured, falling back to Parallel');
+      usingParallel = true;
+    } else {
+      try {
+        result = await exa.getContents([url], {
+          text: true,
+          summary: include_summary ? true : undefined,
+          livecrawl: live_crawl,
+        });
 
-      if (!result.results || result.results.length === 0 || !result.results[0].text) {
-        console.log('Exa AI returned no content, falling back to Parallel');
+        if (!result.results || result.results.length === 0 || !result.results[0].text) {
+          console.log('Exa AI returned no content, falling back to Parallel');
+          usingParallel = true;
+        }
+      } catch (exaError) {
+        console.error('Exa AI error:', exaError);
+        console.log('Falling back to Parallel');
         usingParallel = true;
       }
-    } catch (exaError) {
-      console.error('Exa AI error:', exaError);
-      console.log('Falling back to Parallel');
-      usingParallel = true;
     }
 
     if (usingParallel) {
       try {
+        const parallel = getParallelClient();
+        if (!parallel) {
+          throw new Error('PARALLEL_API_KEY is not configured');
+        }
+
         console.log(`Trying Parallel extract for ${url}`);
         const parallelResult = await parallel.beta.extract({
           urls: [url],
           excerpts: false,
           full_content: true,
-          betas: ['search-extract-2025-10-10']
+          betas: ['search-extract-2025-10-10'],
         });
 
         if (parallelResult.results && parallelResult.results.length > 0) {
@@ -466,6 +528,11 @@ async function retrieveSingleUrl(
     if (usingFirecrawl) {
       const urlWithoutHttps = url.replace(/^https?:\/\//, '');
       try {
+        const firecrawl = getFirecrawlClient();
+        if (!firecrawl) {
+          throw new Error('FIRECRAWL_API_KEY is not configured');
+        }
+
         const scrapeResponse = await firecrawl.scrape(urlWithoutHttps, {
           parsers: ['pdf'],
           proxy: 'auto',
@@ -536,17 +603,29 @@ async function retrieveSingleUrl(
   }
 }
 
-
 export const retrieveTool = tool({
   description:
     'Extract detailed content from one or multiple specific URLs that the user explicitly provides. ONLY use when user shares/pastes actual URLs. NEVER use for discovery, finding information, or after web_search. Automatically detects and fetches metadata and transcripts for YouTube videos, Twitter/X posts, TikTok videos, and Instagram posts using Supadata. For general URLs, uses Exa AI with Parallel and Firecrawl as fallbacks. Valid: user provides "https://example.com". Invalid: "latest news", "what\'s on website.com", or retrieving web_search results.',
   inputSchema: z.object({
     url: z.array(z.string()).describe('Array of URLs to retrieve information from.'),
-    content_type: z.array(ContentType).optional().describe(
-      'Array of content types, one per URL. Options: general, twitter, youtube, tiktok, instagram. Auto-detected from URL if not provided. Length must match url array length, or provide single value to apply to all.'
-    ),
-    include_summary: z.array(z.boolean()).optional().describe('Array of boolean values, one per URL. Default is true for all. Length must match url array length, or provide single value to apply to all. Only applies to general content.'),
-    live_crawl: z.array(z.enum(['never', 'auto', 'preferred'])).optional().describe('Array of crawl preferences, one per URL. Options: never, auto, preferred. Default is "preferred" for all. Length must match url array length, or provide single value to apply to all. Only applies to general content.'),
+    content_type: z
+      .array(ContentType)
+      .optional()
+      .describe(
+        'Array of content types, one per URL. Options: general, twitter, youtube, tiktok, instagram. Auto-detected from URL if not provided. Length must match url array length, or provide single value to apply to all.',
+      ),
+    include_summary: z
+      .array(z.boolean())
+      .optional()
+      .describe(
+        'Array of boolean values, one per URL. Default is true for all. Length must match url array length, or provide single value to apply to all. Only applies to general content.',
+      ),
+    live_crawl: z
+      .array(z.enum(['never', 'auto', 'preferred']))
+      .optional()
+      .describe(
+        'Array of crawl preferences, one per URL. Options: never, auto, preferred. Default is "preferred" for all. Length must match url array length, or provide single value to apply to all. Only applies to general content.',
+      ),
   }),
   execute: async ({
     url,
@@ -563,28 +642,29 @@ export const retrieveTool = tool({
 
     try {
       const urlCount = url.length;
-      
+
       // Normalize parameters - if array length is 1, apply to all URLs; otherwise must match url length
-      const content_types = content_type 
-        ? (content_type.length === 1 ? Array(urlCount).fill(content_type[0]) : content_type)
+      const content_types = content_type
+        ? content_type.length === 1
+          ? Array(urlCount).fill(content_type[0])
+          : content_type
         : Array(urlCount).fill(undefined);
-      
+
       const include_summaries = include_summary
-        ? (include_summary.length === 1 ? Array(urlCount).fill(include_summary[0]) : include_summary)
+        ? include_summary.length === 1
+          ? Array(urlCount).fill(include_summary[0])
+          : include_summary
         : Array(urlCount).fill(true);
-      
+
       const live_crawls = live_crawl
-        ? (live_crawl.length === 1 ? Array(urlCount).fill(live_crawl[0]) : live_crawl)
+        ? live_crawl.length === 1
+          ? Array(urlCount).fill(live_crawl[0])
+          : live_crawl
         : Array(urlCount).fill('preferred');
 
       // Process all URLs in parallel with their respective parameters
       const urlPromises = url.map((singleUrl, index) =>
-        retrieveSingleUrl(
-          singleUrl, 
-          content_types[index], 
-          include_summaries[index], 
-          live_crawls[index]
-        )
+        retrieveSingleUrl(singleUrl, content_types[index], include_summaries[index], live_crawls[index]),
       );
 
       const taskMap = await allSettled(
@@ -647,4 +727,3 @@ export const retrieveTool = tool({
     }
   },
 });
-
