@@ -206,9 +206,32 @@ function formatSupadataResponse(
   };
 }
 
-const supadata = new Supadata({ apiKey: serverEnv.SUPADATA_API_KEY });
-const exa = new Exa(serverEnv.EXA_API_KEY as string);
-const parallel = new Parallel({ apiKey: serverEnv.PARALLEL_API_KEY });
+function getSupadataClient() {
+  const apiKey = serverEnv.SUPADATA_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  return new Supadata({ apiKey });
+}
+
+function getExaClient() {
+  const apiKey = serverEnv.EXA_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  return new Exa(apiKey);
+}
+
+function getParallelClient() {
+  const apiKey = serverEnv.PARALLEL_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  return new Parallel({ apiKey });
+}
 
 function getFirecrawlClient() {
   const apiKey = serverEnv.FIRECRAWL_API_KEY;
@@ -242,6 +265,11 @@ async function retrieveSingleUrl(
     if (detectedType !== 'general') {
       console.log(`Detected ${detectedType} content, using Supadata API for ${url}`);
       try {
+        const supadata = getSupadataClient();
+        if (!supadata) {
+          throw new Error('SUPADATA_API_KEY is not configured');
+        }
+
         // Fetch metadata
         const metadata = await supadata.metadata({ url });
         console.log(`Successfully retrieved ${detectedType} metadata`);
@@ -426,25 +454,36 @@ async function retrieveSingleUrl(
     let usingFirecrawl = false;
     let source = 'exa';
 
-    try {
-      result = await exa.getContents([url], {
-        text: true,
-        summary: include_summary ? true : undefined,
-        livecrawl: live_crawl,
-      });
+    const exa = getExaClient();
+    if (!exa) {
+      console.log('EXA_API_KEY is not configured, falling back to Parallel');
+      usingParallel = true;
+    } else {
+      try {
+        result = await exa.getContents([url], {
+          text: true,
+          summary: include_summary ? true : undefined,
+          livecrawl: live_crawl,
+        });
 
-      if (!result.results || result.results.length === 0 || !result.results[0].text) {
-        console.log('Exa AI returned no content, falling back to Parallel');
+        if (!result.results || result.results.length === 0 || !result.results[0].text) {
+          console.log('Exa AI returned no content, falling back to Parallel');
+          usingParallel = true;
+        }
+      } catch (exaError) {
+        console.error('Exa AI error:', exaError);
+        console.log('Falling back to Parallel');
         usingParallel = true;
       }
-    } catch (exaError) {
-      console.error('Exa AI error:', exaError);
-      console.log('Falling back to Parallel');
-      usingParallel = true;
     }
 
     if (usingParallel) {
       try {
+        const parallel = getParallelClient();
+        if (!parallel) {
+          throw new Error('PARALLEL_API_KEY is not configured');
+        }
+
         console.log(`Trying Parallel extract for ${url}`);
         const parallelResult = await parallel.beta.extract({
           urls: [url],
