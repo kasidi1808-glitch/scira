@@ -64,8 +64,26 @@ export const polarClient = new Polar({
   ...(process.env.NODE_ENV === 'production' ? {} : { server: 'sandbox' }),
 });
 
+const shouldAllowMissingConfig = process.env.SKIP_ENV_VALIDATION === '1' || process.env.VERCEL === '1';
+
+function getRequiredConfigEnv(name: string, fallbackWhenSkipped: string) {
+  const value = process.env[name];
+  if (value && value.trim().length > 0) {
+    return value;
+  }
+
+  if (shouldAllowMissingConfig) {
+    return fallbackWhenSkipped;
+  }
+
+  throw new Error(`${name} environment variable is required`);
+}
+
+const dodoPaymentsBearerToken =
+  process.env.DODO_PAYMENTS_API_KEY || (shouldAllowMissingConfig ? 'missing_dodo_api_key' : '');
+
 export const dodoPayments = new DodoPayments({
-  bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
+  bearerToken: dodoPaymentsBearerToken,
   ...(process.env.NODE_ENV === 'production' ? { environment: 'live_mode' } : { environment: 'test_mode' }),
 });
 
@@ -278,16 +296,8 @@ export const auth = betterAuth({
         checkout({
           products: [
             {
-              productId:
-                process.env.NEXT_PUBLIC_STARTER_TIER ||
-                (() => {
-                  throw new Error('NEXT_PUBLIC_STARTER_TIER environment variable is required');
-                })(),
-              slug:
-                process.env.NEXT_PUBLIC_STARTER_SLUG ||
-                (() => {
-                  throw new Error('NEXT_PUBLIC_STARTER_SLUG environment variable is required');
-                })(),
+              productId: getRequiredConfigEnv('NEXT_PUBLIC_STARTER_TIER', 'missing_starter_tier'),
+              slug: getRequiredConfigEnv('NEXT_PUBLIC_STARTER_SLUG', 'missing_starter_slug'),
             },
           ],
           successUrl: `/success`,
@@ -296,11 +306,7 @@ export const auth = betterAuth({
         portal(),
         usage(),
         webhooks({
-          secret:
-            process.env.POLAR_WEBHOOK_SECRET ||
-            (() => {
-              throw new Error('POLAR_WEBHOOK_SECRET environment variable is required');
-            })(),
+          secret: getRequiredConfigEnv('POLAR_WEBHOOK_SECRET', 'missing_polar_webhook_secret'),
           onPayload: async ({ data, type }) => {
             if (
               type === 'subscription.created' ||
@@ -441,28 +447,12 @@ export const auth = betterAuth({
         dodocheckout({
           products: [
             {
-              productId:
-                process.env.NEXT_PUBLIC_PREMIUM_TIER ||
-                (() => {
-                  throw new Error('NEXT_PUBLIC_PREMIUM_TIER environment variable is required');
-                })(),
-              slug:
-                process.env.NEXT_PUBLIC_PREMIUM_SLUG ||
-                (() => {
-                  throw new Error('NEXT_PUBLIC_PREMIUM_SLUG environment variable is required');
-                })(),
+              productId: getRequiredConfigEnv('NEXT_PUBLIC_PREMIUM_TIER', 'missing_premium_tier'),
+              slug: getRequiredConfigEnv('NEXT_PUBLIC_PREMIUM_SLUG', 'missing_premium_slug'),
             },
             {
-              productId:
-                process.env.NEXT_PUBLIC_MAX_TIER ||
-                (() => {
-                  throw new Error('NEXT_PUBLIC_MAX_TIER environment variable is required');
-                })(),
-              slug:
-                process.env.NEXT_PUBLIC_MAX_SLUG ||
-                (() => {
-                  throw new Error('NEXT_PUBLIC_MAX_SLUG environment variable is required');
-                })(),
+              productId: getRequiredConfigEnv('NEXT_PUBLIC_MAX_TIER', 'missing_max_tier'),
+              slug: getRequiredConfigEnv('NEXT_PUBLIC_MAX_SLUG', 'missing_max_slug'),
             },
           ],
           successUrl: '/success',
@@ -470,7 +460,7 @@ export const auth = betterAuth({
         }),
         dodoportal(),
         dodowebhooks({
-          webhookKey: process.env.DODO_PAYMENTS_WEBHOOK_SECRET!,
+          webhookKey: getRequiredConfigEnv('DODO_PAYMENTS_WEBHOOK_SECRET', 'missing_dodo_webhook_secret'),
           onPayload: async (payload) => {
             const webhookPayload = payload;
             console.log('🔔 Received Dodo Payments webhook:', webhookPayload.type);

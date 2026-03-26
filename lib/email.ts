@@ -2,7 +2,14 @@ import { Resend } from 'resend';
 import { serverEnv } from '@/env/server';
 import SearchCompletedEmail from '@/components/emails/lookout-completed';
 
-const resend = new Resend(serverEnv.RESEND_API_KEY);
+function getResendClient() {
+  const apiKey = serverEnv.RESEND_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  return new Resend(apiKey);
+}
 
 interface SendLookoutCompletionEmailParams {
   to: string;
@@ -18,6 +25,14 @@ export async function sendLookoutCompletionEmail({
   chatId,
 }: SendLookoutCompletionEmailParams) {
   try {
+    const resend = getResendClient();
+    if (!resend) {
+      return {
+        success: false,
+        error: 'RESEND_API_KEY is not configured',
+      };
+    }
+
     const data = await resend.emails.send({
       from: 'Scira AI <noreply@scira.ai>',
       to: [to],

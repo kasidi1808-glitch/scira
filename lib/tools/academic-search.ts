@@ -8,7 +8,14 @@ import { getBetterAllOptions } from '@/lib/better-all';
 
 import Firecrawl, { SearchResultWeb } from '@mendable/firecrawl-js';
 
-const firecrawl = new Firecrawl({ apiKey: serverEnv.FIRECRAWL_API_KEY });
+function getFirecrawlClient() {
+  const apiKey = serverEnv.FIRECRAWL_API_KEY;
+  if (!apiKey || apiKey === 'missing_firecrawl_api_key') {
+    return null;
+  }
+
+  return new Firecrawl({ apiKey });
+}
 
 export function academicSearchTool(dataStream?: UIMessageStreamWriter<ChatMessage>) {
   return tool({
@@ -19,10 +26,20 @@ export function academicSearchTool(dataStream?: UIMessageStreamWriter<ChatMessag
         .describe('Array of search queries for academic papers. Minimum 1, recommended 3-5.')
         .min(1)
         .max(5),
-      maxResults: z.array(z.number()).optional().describe('Array of maximum results per query. Default is 20 per query.'),
+      maxResults: z
+        .array(z.number())
+        .optional()
+        .describe('Array of maximum results per query. Default is 20 per query.'),
     }),
     execute: async ({ queries, maxResults }: { queries: string[]; maxResults?: number[] }) => {
       try {
+        const firecrawl = getFirecrawlClient();
+        if (!firecrawl) {
+          return {
+            searches: queries.map((query) => ({ query, results: [] })),
+          };
+        }
+
         console.log('Academic search queries:', queries);
         console.log('Max results:', maxResults);
 
