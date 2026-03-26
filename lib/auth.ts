@@ -224,7 +224,11 @@ async function handleSubscriptionWebhook(payload: any, status: string) {
 
 export const auth = betterAuth({
   appName: 'scira',
-  baseURL: process.env.NODE_ENV === 'production' ? process.env.BETTER_AUTH_BASE_URL : 'http://localhost:3000',
+  baseURL:
+    process.env.BETTER_AUTH_BASE_URL ||
+    process.env.BETTER_AUTH_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    'http://localhost:3000',
   rateLimit: {
     max: 100,
     window: 60,
