@@ -11,7 +11,7 @@ import { getBetterAllOptions } from '@/lib/better-all';
 
 // Singleton clients - initialized lazily and reused across requests
 let _searchClients: {
-  exa: Exa;
+  exa: Exa | null;
   parallel: Parallel;
   firecrawl: FirecrawlApp;
 } | null = null;
@@ -19,7 +19,7 @@ let _searchClients: {
 function getSearchClients() {
   if (!_searchClients) {
     _searchClients = {
-      exa: new Exa(serverEnv.EXA_API_KEY),
+      exa: serverEnv.EXA_API_KEY ? new Exa(serverEnv.EXA_API_KEY) : null,
       parallel: new Parallel({ apiKey: serverEnv.PARALLEL_API_KEY }),
       firecrawl: new FirecrawlApp({ apiKey: serverEnv.FIRECRAWL_API_KEY }),
     };
@@ -498,8 +498,8 @@ class ExaSearchStrategy implements SearchStrategy {
                 ...(endPublishedDate && { endPublishedDate }),
                 contents: {
                   highlights: {
-                    maxCharacters: 4000
-                  }
+                    maxCharacters: 4000,
+                  },
                 },
               });
             },
@@ -558,7 +558,9 @@ class ExaSearchStrategy implements SearchStrategy {
         return {
           query,
           results: deduplicateByDomainAndUrl(results),
-          images: deduplicateByDomainAndUrl(images.filter((img: { url: string; description: string }) => img.url && img.description)),
+          images: deduplicateByDomainAndUrl(
+            images.filter((img: { url: string; description: string }) => img.url && img.description),
+          ),
         };
       } catch (error) {
         console.error(`Exa search error for query "${query}":`, error);
@@ -606,7 +608,7 @@ const normalizeWebSearchProvider = (provider: string): WebSearchProvider => {
 const createSearchStrategy = (
   provider: WebSearchProvider,
   clients: {
-    exa: Exa;
+    exa: Exa | null;
     parallel: Parallel;
     firecrawl: FirecrawlApp;
   },
@@ -614,7 +616,10 @@ const createSearchStrategy = (
   const strategies = {
     parallel: () => new ParallelSearchStrategy(clients.parallel, clients.firecrawl),
     firecrawl: () => new FirecrawlSearchStrategy(clients.firecrawl),
-    exa: () => new ExaSearchStrategy(clients.exa, clients.firecrawl),
+    exa: () =>
+      clients.exa
+        ? new ExaSearchStrategy(clients.exa, clients.firecrawl)
+        : new FirecrawlSearchStrategy(clients.firecrawl),
   };
 
   return strategies[provider]();
