@@ -13,8 +13,8 @@
     "fix": "prettier --write . --ignore-path .gitignore",
     "knip": "knip",
     "email:dev": "email dev --dir ./components/emails",
-    "deploy": "vc --prod",
-    "deploy:preview": "vc"
+    "deploy": "npx vercel@latest --prod",
+    "deploy:preview": "npx vercel@latest"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.62",
