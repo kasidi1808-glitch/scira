@@ -20,10 +20,10 @@ Research at the speed of thought. The agentic research platform that plans, retr
 
 <div align="center">
 
-|          [Vercel AI SDK](https://sdk.vercel.ai/docs)          |                [Exa AI](https://exa.ai)                |             [Upstash](https://upstash.com)              |
-| :-----------------------------------------------------------: | :----------------------------------------------------: | :-----------------------------------------------------: |
+|          [Vercel AI SDK](https://sdk.vercel.ai/docs)          |                [Exa AI](https://exa.ai)                |               [Upstash](https://upstash.com)                |
+| :-----------------------------------------------------------: | :----------------------------------------------------: | :---------------------------------------------------------: |
 | <img src="/public/one.svg" alt="Vercel AI SDK" height="40" /> | <img src="/public/exa.png" alt="Exa AI" height="40" /> | <img src="/public/upstash.svg" alt="Upstash" height="40" /> |
-|            For AI model integration and streaming             |          For web search and content retrieval          |        For serverless Redis and rate limiting           |
+|            For AI model integration and streaming             |          For web search and content retrieval          |           For serverless Redis and rate limiting            |
 
 </div>
 
@@ -57,29 +57,30 @@ Research at the speed of thought. The agentic research platform that plans, retr
 
 ### Search Modes (17 modes)
 
-| Mode | Description |
-|---|---|
-| **Web** | Search the entire web with AI-powered analysis |
-| **Chat** | Talk to the model directly, no search |
-| **X** | Real-time posts, trends, and conversations |
-| **Stocks** | Market data, charts, and financial analysis |
-| **Code** | Get context about languages and frameworks |
-| **Academic** | Research papers, citations, and scholarly sources |
-| **Extreme** | Deep research with multiple sources and analysis |
-| **Reddit** | Discussions, opinions, and community insights |
-| **GitHub** | Repositories, code, and developer discussions |
-| **Crypto** | Cryptocurrency research powered by CoinGecko |
-| **Prediction** | Prediction markets from Polymarket and Kalshi |
-| **YouTube** | Video summaries, transcripts, and analysis |
-| **Spotify** | Search songs, artists, and albums |
-| **Connectors** | Search Google Drive, Notion & OneDrive *(Pro)* |
-| **Memory** | Your personal memory companion *(Pro)* |
-| **Voice** | Conversational AI with real-time voice *(Pro)* |
-| **XQL** | Advanced X query language for tweet analysis *(Pro)* |
+| Mode           | Description                                          |
+| -------------- | ---------------------------------------------------- |
+| **Web**        | Search the entire web with AI-powered analysis       |
+| **Chat**       | Talk to the model directly, no search                |
+| **X**          | Real-time posts, trends, and conversations           |
+| **Stocks**     | Market data, charts, and financial analysis          |
+| **Code**       | Get context about languages and frameworks           |
+| **Academic**   | Research papers, citations, and scholarly sources    |
+| **Extreme**    | Deep research with multiple sources and analysis     |
+| **Reddit**     | Discussions, opinions, and community insights        |
+| **GitHub**     | Repositories, code, and developer discussions        |
+| **Crypto**     | Cryptocurrency research powered by CoinGecko         |
+| **Prediction** | Prediction markets from Polymarket and Kalshi        |
+| **YouTube**    | Video summaries, transcripts, and analysis           |
+| **Spotify**    | Search songs, artists, and albums                    |
+| **Connectors** | Search Google Drive, Notion & OneDrive _(Pro)_       |
+| **Memory**     | Your personal memory companion _(Pro)_               |
+| **Voice**      | Conversational AI with real-time voice _(Pro)_       |
+| **XQL**        | Advanced X query language for tweet analysis _(Pro)_ |
 
 ### Tools (28 tools)
 
 #### Search & Retrieval
+
 - **Web search** — Multi-query parallel web search with deduplication using Exa, Firecrawl, Parallel, and Tavily
 - **Extreme search** — LLM-driven deep research agent with multi-step planning, code execution, and R2 artifact storage
 - **Academic search** — Search academic papers and research using Exa and Firecrawl
@@ -91,22 +92,26 @@ Research at the speed of thought. The agentic research platform that plans, retr
 - **URL content retrieval** — Extract content from any URL including tweets, YouTube, TikTok, and Instagram
 
 #### Financial & Market Data
+
 - **Stock charts** — Interactive stock charts with OHLC data, earnings, and news using Valyu, Tavily, and Exa
 - **Currency converter** — Forex and crypto conversion with real-time rates using Valyu
 - **Crypto tools** — Cryptocurrency data, contract lookups, and OHLC charts using CoinGecko
 - **Prediction markets** — Query Polymarket and Kalshi data with Cohere reranking using Valyu
 
 #### Location & Travel
+
 - **Weather** — Current weather, 5-day forecast, air quality, and 16-day extended forecast using OpenWeatherMap and Open-Meteo
 - **Maps & geocoding** — Forward/reverse geocoding and nearby place discovery using Google Maps API
 - **Flight tracking** — Real-time flight status with departure/arrival details
 
 #### Media & Entertainment
+
 - **Movie/TV search** — Search movies and TV shows with detailed cast, ratings, and metadata using TMDB
 - **Trending movies** — Today's trending movies from TMDB
 - **Trending TV shows** — Today's trending TV shows from TMDB
 
 #### Productivity & Utilities
+
 - **Code interpreter** — Write and execute Python code in a sandboxed Daytona environment with chart generation
 - **Code context** — Get contextual information about programming topics using Exa Context API
 - **Text translation** — Translate text (and text within images) between languages using AI models
@@ -164,6 +169,39 @@ Research at the speed of thought. The agentic research platform that plans, retr
 ### Deploy your own
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fzaidmukaddam%2Fscira&env=XAI_API_KEY,OPENAI_API_KEY,ANTHROPIC_API_KEY,GROQ_API_KEY,GOOGLE_GENERATIVE_AI_API_KEY,DAYTONA_API_KEY,DATABASE_URL,BETTER_AUTH_SECRET,GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,TWITTER_CLIENT_ID,TWITTER_CLIENT_SECRET,REDIS_URL,ELEVENLABS_API_KEY,TAVILY_API_KEY,EXA_API_KEY,SUPADATA_API_KEY,TMDB_API_KEY,YT_ENDPOINT,FIRECRAWL_API_KEY,OPENWEATHER_API_KEY,GOOGLE_MAPS_API_KEY,MAPBOX_ACCESS_TOKEN,AVIATION_STACK_API_KEY,CRON_SECRET,BLOB_READ_WRITE_TOKEN,MEM0_API_KEY,MEM0_ORG_ID,MEM0_PROJECT_ID,SMITHERY_API_KEY,NEXT_PUBLIC_MAPBOX_TOKEN,NEXT_PUBLIC_POSTHOG_KEY,NEXT_PUBLIC_POSTHOG_HOST,NEXT_PUBLIC_SCIRA_PUBLIC_API_KEY,SCIRA_API_KEY&envDescription=API%20keys%20and%20configuration%20required%20for%20Scira%20to%20function)
+
+#### Deploy from the CLI
+
+1. Link the project and create a preview deployment:
+   ```bash
+   pnpm deploy:preview
+   ```
+2. Promote a production deployment:
+   ```bash
+   pnpm deploy
+   ```
+
+Both scripts use `npx vercel@latest`, so you don't need to globally install the Vercel CLI.
+
+#### Troubleshooting: "No Production Deployment"
+
+If Vercel shows **"No Production Deployment. Your Production Domain is not serving traffic."**, use this checklist:
+
+1. Ensure the repo is linked to the correct Vercel project:
+   ```bash
+   npx vercel@latest link
+   ```
+2. Create a production deployment directly from your current branch:
+   ```bash
+   pnpm deploy
+   ```
+3. If you already have a healthy preview deployment, promote it:
+   ```bash
+   pnpm deploy:promote <deployment-url>
+   ```
+4. In Vercel Project Settings → Git, verify the **Production Branch** value (many projects default to `main`).
+
+If production is locked to `main`, pushing only to feature branches will not update the production domain.
 
 ## Set Scira as your default search engine
 
