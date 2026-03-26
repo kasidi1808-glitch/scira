@@ -183,6 +183,26 @@ Research at the speed of thought. The agentic research platform that plans, retr
 
 Both scripts use `npx vercel@latest`, so you don't need to globally install the Vercel CLI.
 
+#### Troubleshooting: "No Production Deployment"
+
+If Vercel shows **"No Production Deployment. Your Production Domain is not serving traffic."**, use this checklist:
+
+1. Ensure the repo is linked to the correct Vercel project:
+   ```bash
+   npx vercel@latest link
+   ```
+2. Create a production deployment directly from your current branch:
+   ```bash
+   pnpm deploy
+   ```
+3. If you already have a healthy preview deployment, promote it:
+   ```bash
+   pnpm deploy:promote <deployment-url>
+   ```
+4. In Vercel Project Settings → Git, verify the **Production Branch** value (many projects default to `main`).
+
+If production is locked to `main`, pushing only to feature branches will not update the production domain.
+
 ## Set Scira as your default search engine
 
 1. **Open the Chrome browser settings**:

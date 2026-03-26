@@ -14,7 +14,8 @@
     "knip": "knip",
     "email:dev": "email dev --dir ./components/emails",
     "deploy": "npx vercel@latest --prod",
-    "deploy:preview": "npx vercel@latest"
+    "deploy:preview": "npx vercel@latest",
+    "deploy:promote": "npx vercel@latest promote"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.62",
