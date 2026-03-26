@@ -2,6 +2,8 @@
 import { createEnv } from '@t3-oss/env-nextjs';
 import { z } from 'zod';
 
+const shouldSkipEnvValidation = process.env.SKIP_ENV_VALIDATION === '1' || process.env.VERCEL === '1';
+
 export const clientEnv = createEnv({
   client: {
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().min(1),
@@ -13,4 +15,6 @@ export const clientEnv = createEnv({
     NEXT_PUBLIC_BUILD_SERVER_URL: process.env.NEXT_PUBLIC_BUILD_SERVER_URL,
     NEXT_PUBLIC_BUILD_SERVER_SECRET: process.env.NEXT_PUBLIC_BUILD_SERVER_SECRET,
   },
+  emptyStringAsUndefined: true,
+  skipValidation: shouldSkipEnvValidation,
 });
