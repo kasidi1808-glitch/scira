@@ -1,8 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { Daytona } from '@daytonaio/sdk';
-import { serverEnv } from '@/env/server';
 import { SNAPSHOT_NAME } from '@/lib/constants';
+import { getDaytonaClient } from '@/lib/daytona';
 
 export const codeInterpreterTool = tool({
   description: 'Write and execute Python code.',
@@ -20,10 +19,12 @@ export const codeInterpreterTool = tool({
     console.log('Title:', title);
     console.log('Icon:', icon);
 
-    const daytona = new Daytona({
-      apiKey: serverEnv.DAYTONA_API_KEY,
-      target: 'us',
-    });
+    const daytona = getDaytonaClient();
+    if (!daytona) {
+      return {
+        message: 'Daytona credentials are not configured',
+      };
+    }
 
     const sandbox = await daytona.create({
       snapshot: SNAPSHOT_NAME,
@@ -58,11 +59,11 @@ export const codeInterpreterTool = tool({
 
     const chartData = chart
       ? {
-        type: chart.type,
-        title: chart.title,
-        elements: chart.elements,
-        png: undefined,
-      }
+          type: chart.type,
+          title: chart.title,
+          elements: chart.elements,
+          png: undefined,
+        }
       : undefined;
 
     await sandbox.delete();
