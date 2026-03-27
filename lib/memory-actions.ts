@@ -4,10 +4,14 @@ import { getUser } from '@/lib/auth-utils';
 import { serverEnv } from '@/env/server';
 import { Supermemory } from 'supermemory';
 
-// Initialize the memory client with API key
-const supermemoryClient = new Supermemory({
-  apiKey: serverEnv.SUPERMEMORY_API_KEY,
-});
+function getSupermemoryClient() {
+  const apiKey = serverEnv.SUPERMEMORY_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  return new Supermemory({ apiKey });
+}
 
 // Define the types based on actual API responses
 export interface MemoryItem {
@@ -54,6 +58,11 @@ export async function searchMemories(query: string, page = 1, pageSize = 20): Pr
   }
 
   try {
+    const supermemoryClient = getSupermemoryClient();
+    if (!supermemoryClient) {
+      return { memories: [], total: 0 };
+    }
+
     const result = await supermemoryClient.search.memories({
       q: query,
       containerTag: user.id,
@@ -79,6 +88,11 @@ export async function getAllMemories(page = 1, pageSize = 20): Promise<MemoryRes
   }
 
   try {
+    const supermemoryClient = getSupermemoryClient();
+    if (!supermemoryClient) {
+      return { memories: [], total: 0 };
+    }
+
     const result = await supermemoryClient.documents.list({
       containerTags: [user.id],
       page: page,
@@ -107,6 +121,11 @@ export async function deleteMemory(memoryId: string) {
   }
 
   try {
+    const supermemoryClient = getSupermemoryClient();
+    if (!supermemoryClient) {
+      return { success: false, error: 'SUPERMEMORY_API_KEY is not configured' };
+    }
+
     const data = await supermemoryClient.documents.delete(memoryId);
     return data;
   } catch (error) {

@@ -4,9 +4,12 @@ import { all } from 'better-all';
 import { getBetterAllOptions } from '@/lib/better-all';
 
 function getClient() {
-  return new Supermemory({
-    apiKey: process.env.SUPERMEMORY_API_KEY!,
-  });
+  const apiKey = process.env.SUPERMEMORY_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  return new Supermemory({ apiKey });
 }
 
 export type ConnectorProvider = 'google-drive' | 'notion' | 'onedrive';
@@ -116,6 +119,9 @@ export async function createConnection(provider: ConnectorProvider, userId: stri
   }
 
   const client = getClient();
+  if (!client) {
+    throw new Error('SUPERMEMORY_API_KEY is not configured');
+  }
   const config = CONNECTOR_CONFIGS[provider];
   const baseUrl = getBaseUrl();
 
@@ -149,6 +155,9 @@ export async function getConnection(provider: ConnectorProvider, userId: string)
   console.log(`🔍 Getting connection for ${provider}, userId: ${userId}`);
   try {
     const client = getClient();
+    if (!client) {
+      return null;
+    }
     const config = CONNECTOR_CONFIGS[provider];
     console.log(`🏷️ Searching with container tags: [${userId}, ${config.syncTag}]`);
 
@@ -179,6 +188,9 @@ export async function listUserConnections(userId: string) {
   try {
     console.log('listing user connections', userId);
     const client = getClient();
+    if (!client) {
+      return [];
+    }
 
     // Get all providers and their sync tags
     const providers = Object.keys(CONNECTOR_CONFIGS) as ConnectorProvider[];
@@ -199,7 +211,7 @@ export async function listUserConnections(userId: string) {
 
     const connectionMap = await all(
       Object.fromEntries(connectionPromises.map((promise, index) => [`p:${index}`, async () => promise])),
-    getBetterAllOptions(),
+      getBetterAllOptions(),
     );
     const allConnections = providers.map((_, index) => connectionMap[`p:${index}`]);
     const flatConnections = allConnections.flat();
@@ -230,6 +242,9 @@ export async function deleteConnection(connectionId: string) {
   console.log(`🗑️ Deleting connection with ID: ${connectionId}`);
   try {
     const client = getClient();
+    if (!client) {
+      return null;
+    }
     const result = await client.connections.deleteByID(connectionId);
     console.log(`✅ Successfully deleted connection:`, result.id);
     return result;
@@ -244,6 +259,9 @@ export async function manualSync(provider: ConnectorProvider, userId: string) {
   console.log(`🔄 Starting manual sync for ${provider}, userId: ${userId}`);
   try {
     const client = getClient();
+    if (!client) {
+      return null;
+    }
     const config = CONNECTOR_CONFIGS[provider];
     console.log(`🏷️ Syncing with container tags: [${userId}, ${config.syncTag}]`);
 
@@ -265,6 +283,9 @@ export async function getSyncStatus(provider: ConnectorProvider, userId: string)
   console.log(`📊 Getting sync status for ${provider}, userId: ${userId}`);
   try {
     const client = getClient();
+    if (!client) {
+      return null;
+    }
     const config = CONNECTOR_CONFIGS[provider];
     console.log(`🏷️ Status check with container tags: [${userId}, ${config.syncTag}]`);
 
