@@ -1832,7 +1832,11 @@ export async function getDodoSubscriptionExpirationDate() {
 }
 
 // Initialize QStash client
-const qstash = new Client({ token: serverEnv.QSTASH_TOKEN });
+const qstash = new Client({
+  token:
+    serverEnv.QSTASH_TOKEN ||
+    (process.env.SKIP_ENV_VALIDATION === '1' || process.env.VERCEL === '1' ? 'missing_qstash_token' : ''),
+});
 
 // Helper function to convert frequency to cron schedule with timezone
 function frequencyToCron(frequency: string, time: string, timezone: string, dayOfWeek?: string): string {
