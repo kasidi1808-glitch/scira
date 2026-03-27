@@ -2,6 +2,7 @@
 import { createEnv } from '@t3-oss/env-nextjs';
 import { z } from 'zod';
 
+const shouldSkipEnvValidation = process.env.SKIP_ENV_VALIDATION === '1' || process.env.VERCEL === '1';
 
 export const serverEnv = createEnv({
   server: {
@@ -28,7 +29,10 @@ export const serverEnv = createEnv({
     VALYU_API_KEY: z.string().min(1),
     TMDB_API_KEY: z.string().min(1),
     YT_ENDPOINT: z.string().min(1),
-    FIRECRAWL_API_KEY: z.string().min(1),
+    FIRECRAWL_API_KEY: z.preprocess(
+      (value) => value ?? (shouldSkipEnvValidation ? 'missing_firecrawl_api_key' : undefined),
+      z.string().min(1),
+    ),
     NOTTE_API_KEY: z.string().optional(),
     PARALLEL_API_KEY: z.string().min(1),
     OPENWEATHER_API_KEY: z.string().min(1),
@@ -61,4 +65,6 @@ export const serverEnv = createEnv({
     UPSTASH_BOX_API_KEY: z.string().optional(),
   },
   experimental__runtimeEnv: process.env,
+  emptyStringAsUndefined: true,
+  skipValidation: shouldSkipEnvValidation,
 });

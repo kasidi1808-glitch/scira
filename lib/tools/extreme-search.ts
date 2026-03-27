@@ -6,7 +6,6 @@
 // ----> Return all collected sources and research data to the user
 
 import Exa from 'exa-js';
-import { Daytona } from '@daytonaio/sdk';
 import { Output, generateText, hasToolCall, stepCountIs, tool } from 'ai';
 import type { UIMessageStreamWriter } from 'ai';
 import { z } from 'zod';
@@ -36,6 +35,7 @@ import { gateway, GatewayProviderOptions } from '@ai-sdk/gateway';
 import { GoogleGenerativeAIProviderOptions, GoogleLanguageModelOptions } from '@ai-sdk/google';
 import { TokenClient } from 'tokenc';
 import { scrapeWebpageWithNotte } from '@/lib/notte';
+import { getDaytonaClient } from '@/lib/daytona';
 
 const ttc = new TokenClient({ apiKey: process.env.TTC_API_KEY! });
 
@@ -198,12 +198,12 @@ async function searchFilesForQuery(
   return allResults.slice(0, maxResults);
 }
 
-const daytona = new Daytona({
-  apiKey: serverEnv.DAYTONA_API_KEY,
-  target: 'us',
-});
-
 const runCode = async (code: string, installLibs: string[] = []) => {
+  const daytona = getDaytonaClient();
+  if (!daytona) {
+    throw new Error('Daytona credentials are not configured');
+  }
+
   const sandbox = await daytona.create({
     snapshot: SNAPSHOT_NAME,
   });
